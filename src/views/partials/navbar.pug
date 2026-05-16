@@ -1,0 +1,11 @@
+nav.navbar
+  .navbar-brand
+    span.logo-icon 🍝
+    span.logo-text OrderFlow
+    span.restaurant-name  | Tagliatelle
+  .navbar-user
+    span.user-info
+      span.role-badge(class=user.role.toLowerCase())= user.role
+      |  #{user.name}
+    form(action="/logout" method="POST" style="display:inline")
+      button.btn.btn-sm.btn-outline(type="submit") Logout

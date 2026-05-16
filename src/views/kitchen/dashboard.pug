@@ -1,0 +1,42 @@
+extends ../layout
+
+block content
+  .page-header
+    h2 Kitchen Dashboard
+    button.btn.btn-secondary#refresh-btn(onclick="location.reload()") Refresh
+
+  if orders.length === 0
+    .empty-state
+      .empty-icon 👨‍🍳
+      p No active orders. Waiting for new orders...
+  else
+    .kitchen-grid
+      each order in orders
+        .kitchen-order-card
+          .kitchen-order-header
+            .order-id-table
+              span.kitchen-order-id Order ##{order.id}
+              span.kitchen-table-badge Table #{order.table ? order.table.tableNumber : 'N/A'}
+            .order-time= new Date(order.createdAt).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
+            .order-waiter Waiter: #{order.waiter ? order.waiter.name : 'Unknown'}
+          .kitchen-items
+            each item in order.orderItems
+              .kitchen-item(class=`item-status-${item.status.toLowerCase()}`)
+                .kitchen-item-info
+                  span.kitchen-item-qty= item.quantity + 'x'
+                  span.kitchen-item-name= item.menuItem.name
+                  if item.notes
+                    .kitchen-item-notes Notes: #{item.notes}
+                .kitchen-item-status
+                  span.status-badge(class=`status-${item.status.toLowerCase()}`)= item.status
+                  .kitchen-actions
+                    if item.status === 'NEW'
+                      form(action=`/kitchen/item/${item.id}/status` method="POST" style="display:inline")
+                        input(type="hidden" name="status" value="COOKING")
+                        button.btn.btn-sm.btn-cooking(type="submit") Start Cooking
+                    if item.status === 'COOKING'
+                      form(action=`/kitchen/item/${item.id}/status` method="POST" style="display:inline")
+                        input(type="hidden" name="status" value="READY")
+                        button.btn.btn-sm.btn-ready(type="submit") Mark Ready
+
+  script(src="/js/kitchen.js")

@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  WAITER
+  COOK
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ItemStatus {
+  NEW
+  COOKING
+  READY
+  DELIVERED
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  name     String
+  password String
+  role     UserRole
+
+  ordersCreated Order[]     @relation("OrdersCreated")
+  itemsCooked   OrderItem[] @relation("ItemsCooked")
+}
+
+model RestaurantTable {
+  id          Int     @id @default(autoincrement())
+  tableNumber Int     @unique
+  seats       Int     @default(4)
+  isOccupied  Boolean @default(false)
+
+  orders Order[]
+}
+
+model MenuItem {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal @db.Decimal(8, 2)
+  category    String
+  available   Boolean @default(true)
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  tableId   Int?
+  table     RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  waiterId  Int?
+  waiter    User?       @relation("OrdersCreated", fields: [waiterId], references: [id], onDelete: SetNull)
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id         Int        @id @default(autoincrement())
+  orderId    Int
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId Int
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  quantity   Int        @default(1)
+  status     ItemStatus @default(NEW)
+  notes      String?
+  cookId     Int?
+  cook       User?      @relation("ItemsCooked", fields: [cookId], references: [id], onDelete: SetNull)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+}

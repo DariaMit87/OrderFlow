@@ -1,0 +1,7 @@
+if success && success.length
+  each msg in success
+    .alert.alert-success= msg
+
+if error && error.length
+  each msg in error
+    .alert.alert-error= msg

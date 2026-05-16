@@ -1,0 +1,49 @@
+extends ../layout
+
+block content
+  .page-header
+    h2 New Order — Table #{table.tableNumber}
+    a.btn.btn-secondary(href="/waiter") Back to Tables
+
+  form#order-form(action=`/waiter/table/${table.id}/order` method="POST")
+    .order-layout
+      .menu-section
+        h3 Menu
+        each items, category in grouped
+          .menu-category
+            h4.category-title= category
+            .menu-items-grid
+              each item in items
+                .menu-item-card
+                  .item-info
+                    .item-name= item.name
+                    .item-description= item.description || ''
+                    .item-price €#{item.price}
+                  .item-controls
+                    .qty-control
+                      button.qty-btn(type="button" data-action="decrease" data-id=item.id) −
+                      input.qty-input(
+                        type="number"
+                        name=`items[${item.id}][quantity]`
+                        value="0"
+                        min="0"
+                        max="20"
+                        id=`qty-${item.id}`
+                        readonly
+                      )
+                      button.qty-btn(type="button" data-action="increase" data-id=item.id) +
+                    input.notes-input(
+                      type="text"
+                      name=`items[${item.id}][notes]`
+                      placeholder="Notes (optional)"
+                      id=`notes-${item.id}`
+                    )
+
+      .order-summary
+        h3 Order Summary
+        #summary-list
+          p.empty-msg No items added yet.
+        .summary-footer
+          button.btn.btn-primary.btn-full(type="submit") Send to Kitchen
+
+  script(src="/js/waiter.js")
