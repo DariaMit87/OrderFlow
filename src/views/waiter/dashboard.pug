@@ -1,20 +1,17 @@
 extends ../layout
 
 block content
-  .page-header
-    h2 Tables
-    a.btn.btn-secondary(href="/waiter/orders") My Orders
-
-  .tables-grid
-    each table in tables
-      .table-card(class=table.isOccupied ? 'occupied' : 'free')
-        .table-number Table #{table.tableNumber}
-        .table-seats #{table.seats} seats
-        .table-status
-          span.status-badge(class=table.isOccupied ? 'status-occupied' : 'status-free')
+  .page-wide
+    .page-title Tables
+    .tables-grid
+      each table in tables
+        .table-card(class=table.isOccupied ? 'occupied' : '')
+          .table-num Table #{table.tableNumber}
+          .table-seats #{table.seats} seats
+          span.table-status-label(class=table.isOccupied ? 'status-occupied' : 'status-free')
             = table.isOccupied ? 'Occupied' : 'Free'
-        .table-actions
-          if table.isOccupied
-            a.btn.btn-sm.btn-secondary(href=`/waiter/table/${table.id}/order`) Add Order
-          else
-            a.btn.btn-sm.btn-primary(href=`/waiter/table/${table.id}/order`) Take Order
+          br
+          a.btn.btn-sm(
+            href=`/waiter/table/${table.id}/order`
+            class=table.isOccupied ? 'btn-gray' : 'btn-dark'
+          )= table.isOccupied ? 'Add Order' : 'Take Order'

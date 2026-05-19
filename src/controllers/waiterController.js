@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 
+// Shows all tables and their status
 async function getDashboard(req, res, next) {
   try {
     const tables = await prisma.restaurantTable.findMany({
@@ -17,6 +18,7 @@ async function getDashboard(req, res, next) {
   }
 }
 
+// Loads the "create order" form
 async function getCreateOrder(req, res, next) {
   try {
     const tableId = parseInt(req.params.tableId);
@@ -28,6 +30,7 @@ async function getCreateOrder(req, res, next) {
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
+    // Group menu items by their category for display
     const grouped = {};
     for (const item of menuItems) {
       if (!grouped[item.category]) grouped[item.category] = [];
@@ -40,11 +43,13 @@ async function getCreateOrder(req, res, next) {
   }
 }
 
+// Processes the submitted order form, creates the order and its items in the database
 async function postCreateOrder(req, res, next) {
   try {
     const tableId = parseInt(req.params.tableId);
     const { items } = req.body;
 
+    // Create the list of order items from submitted form data
     const orderItems = [];
     if (items) {
       for (const [menuItemId, data] of Object.entries(items)) {
@@ -65,8 +70,9 @@ async function postCreateOrder(req, res, next) {
       return res.redirect(`/waiter/table/${tableId}/order`);
     }
 
+    // Create the order, mark the table as occupied
     await prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
+      await tx.order.create({
         data: {
           tableId,
           waiterId: req.user.id,
@@ -78,7 +84,6 @@ async function postCreateOrder(req, res, next) {
         where: { id: tableId },
         data: { isOccupied: true },
       });
-      return order;
     });
 
     req.flash('success', 'Order sent to kitchen!');
@@ -88,6 +93,7 @@ async function postCreateOrder(req, res, next) {
   }
 }
 
+// Fetch all orders created by the waiter
 async function getOrders(req, res, next) {
   try {
     const orders = await prisma.order.findMany({
@@ -101,12 +107,20 @@ async function getOrders(req, res, next) {
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.render('waiter/orders', { title: 'My Orders', orders, user: req.user });
+
+    // Push completed and cancelled orders to the bottom of the list
+    const sorted = [
+      ...orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)),
+      ...orders.filter(o =>  ['COMPLETED', 'CANCELLED'].includes(o.status)),
+    ];
+
+    res.render('waiter/orders', { title: 'My Orders', orders: sorted, user: req.user });
   } catch (err) {
     next(err);
   }
 }
 
+// Mark a READY item as DELIVERED
 async function markDelivered(req, res, next) {
   try {
     const itemId = parseInt(req.params.itemId);
@@ -119,17 +133,12 @@ async function markDelivered(req, res, next) {
       return res.status(403).render('error', { title: 'Forbidden', message: 'Not allowed.' });
     }
 
-    if (item.status !== 'READY') {
-      req.flash('error', 'Only READY items can be marked as delivered.');
-      return res.redirect('/waiter/orders');
-    }
-
     await prisma.orderItem.update({
       where: { id: itemId },
       data: { status: 'DELIVERED' },
     });
 
-    // If all items in the order are delivered, mark order completed
+    // If every item in the order is delivered, close the order and free the table
     const remaining = await prisma.orderItem.count({
       where: { orderId: item.orderId, status: { not: 'DELIVERED' } },
     });

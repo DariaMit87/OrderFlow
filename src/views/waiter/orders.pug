@@ -1,33 +1,36 @@
 extends ../layout
 
 block content
-  .page-header
-    h2 My Orders
-    a.btn.btn-secondary(href="/waiter") Back to Tables
+  .page
+    .page-title Order Status
 
-  if orders.length === 0
-    .empty-state
-      p No orders yet. Select a table to start an order.
-  else
-    .orders-list
-      each order in orders
-        .order-card
-          .order-card-header
-            .order-meta
-              span.order-id Order ##{order.id}
-              span.order-table Table #{order.table ? order.table.tableNumber : 'N/A'}
-              span.order-time= new Date(order.createdAt).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
-            span.status-badge(class=`status-${order.status.toLowerCase()}`)= order.status.replace('_', ' ')
-          .order-items-list
-            each item in order.orderItems
-              .order-item-row
-                .item-detail
-                  span.item-qty= item.quantity + 'x'
-                  span.item-name= item.menuItem.name
-                  if item.notes
-                    span.item-notes  (#{item.notes})
-                .item-status-section
-                  span.status-badge(class=`status-${item.status.toLowerCase()}`)= item.status
-                  if item.status === 'READY'
-                    form(action=`/waiter/orders/item/${item.id}/deliver` method="POST" style="display:inline")
-                      button.btn.btn-sm.btn-success(type="submit") Mark Delivered
+    if orders.length === 0
+      .empty-state No orders yet. Select a table to start an order.
+    else
+      .orders-stack
+        each order in orders
+          - const total = order.orderItems.reduce((sum, i) => sum + (parseFloat(i.menuItem.price) * i.quantity), 0)
+          .order-card
+            .order-card-header
+              .order-header-left
+                .order-table-name Table #{order.table ? order.table.tableNumber : 'N/A'}
+                .order-meta Order ##{order.id} &bull; #{new Date(order.createdAt).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}
+              span.badge(class=order.status === 'IN_PROGRESS' ? 'badge-progress' : order.status === 'COMPLETED' ? 'badge-completed' : 'badge-new')
+                = order.status === 'IN_PROGRESS' ? 'In Progress' : order.status === 'COMPLETED' ? 'Completed' : order.status
+            .order-items-body
+              each item in order.orderItems
+                .order-item-row
+                  .item-name-qty
+                    span.item-qty= item.quantity + 'x'
+                    span.item-name= item.menuItem.name
+                    if item.notes
+                      span.item-note  (#{item.notes})
+                  .item-right
+                    span.badge(class=`badge-${item.status.toLowerCase()}`)= item.status.toLowerCase()
+                    span.item-price €#{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}
+                    if item.status === 'READY'
+                      form(action=`/waiter/orders/item/${item.id}/deliver` method="POST")
+                        button.btn.btn-sm.btn-dark(type="submit") Mark Delivered
+            .order-total-row
+              span Total
+              span €#{total.toFixed(2)}

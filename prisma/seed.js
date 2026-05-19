@@ -4,86 +4,79 @@ const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
+// Clears and repopulates the database with users, tables, and menu items
 async function main() {
-  console.log('Seeding database...');
+  console.log('Clearing existing data...');
 
-  // Users
+  // Delete in dependency order to avoid foreign key violations
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.menuItem.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Reset all tables to unoccupied after clearing orders
+  await prisma.restaurantTable.updateMany({ data: { isOccupied: false } });
+
+  console.log('Seeding users...');
+
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  await prisma.user.upsert({
-    where: { username: 'waiter1' },
-    update: {},
-    create: { username: 'waiter1', name: 'Marco Rossi', password: hashedPassword, role: 'WAITER' },
-  });
+  // Create two waiter accounts with British names
+  await prisma.user.create({ data: { username: 'waiter1', name: 'James Wilson',   password: hashedPassword, role: 'WAITER' } });
+  await prisma.user.create({ data: { username: 'waiter2', name: 'Emma Thompson',  password: hashedPassword, role: 'WAITER' } });
 
-  await prisma.user.upsert({
-    where: { username: 'waiter2' },
-    update: {},
-    create: { username: 'waiter2', name: 'Sofia Bianchi', password: hashedPassword, role: 'WAITER' },
-  });
+  // Create two cook accounts with British names
+  await prisma.user.create({ data: { username: 'cook1',   name: 'Oliver Smith',   password: hashedPassword, role: 'COOK'   } });
+  await prisma.user.create({ data: { username: 'cook2',   name: 'Sarah Johnson',  password: hashedPassword, role: 'COOK'   } });
 
-  await prisma.user.upsert({
-    where: { username: 'cook1' },
-    update: {},
-    create: { username: 'cook1', name: 'Giuseppe Ferrari', password: hashedPassword, role: 'COOK' },
-  });
+  console.log('Seeding tables...');
 
-  await prisma.user.upsert({
-    where: { username: 'cook2' },
-    update: {},
-    create: { username: 'cook2', name: 'Anna Conti', password: hashedPassword, role: 'COOK' },
-  });
-
-  // Tables
+  // Create 10 restaurant tables only if they do not already exist
   for (let i = 1; i <= 10; i++) {
     await prisma.restaurantTable.upsert({
-      where: { tableNumber: i },
+      where:  { tableNumber: i },
       update: {},
       create: { tableNumber: i, seats: i <= 4 ? 2 : i <= 7 ? 4 : 6 },
     });
   }
 
-  // Menu items
+  console.log('Seeding menu...');
+
+  // Create the full menu with English names across five categories
   const menuItems = [
-    // Antipasti
-    { name: 'Bruschetta al Pomodoro', description: 'Toasted bread with tomatoes, garlic, and basil', price: 6.50, category: 'Antipasti' },
-    { name: 'Tagliere di Salumi', description: 'Selection of Italian cured meats', price: 12.00, category: 'Antipasti' },
-    { name: 'Carpaccio di Manzo', description: 'Thin sliced beef with rocket and parmesan', price: 13.50, category: 'Antipasti' },
-    // Primi
-    { name: 'Tagliatelle al Ragù', description: 'Fresh tagliatelle with classic Bolognese sauce', price: 14.00, category: 'Primi' },
-    { name: 'Spaghetti Carbonara', description: 'Spaghetti with egg, pecorino, guanciale, and black pepper', price: 13.00, category: 'Primi' },
-    { name: 'Risotto ai Funghi Porcini', description: 'Creamy risotto with porcini mushrooms', price: 15.00, category: 'Primi' },
-    { name: 'Penne all\'Arrabbiata', description: 'Penne with spicy tomato sauce', price: 12.00, category: 'Primi' },
-    // Secondi
-    { name: 'Saltimbocca alla Romana', description: 'Veal with prosciutto and sage in white wine', price: 22.00, category: 'Secondi' },
-    { name: 'Branzino al Forno', description: 'Oven-baked sea bass with lemon and capers', price: 24.00, category: 'Secondi' },
-    { name: 'Bistecca alla Fiorentina', description: 'Florentine T-bone steak, 400g', price: 35.00, category: 'Secondi' },
-    // Contorni
-    { name: 'Insalata Mista', description: 'Mixed seasonal salad', price: 5.00, category: 'Contorni' },
-    { name: 'Patate al Rosmarino', description: 'Roasted potatoes with rosemary', price: 5.50, category: 'Contorni' },
-    { name: 'Verdure Grigliate', description: 'Grilled seasonal vegetables', price: 6.00, category: 'Contorni' },
-    // Dolci
-    { name: 'Tiramisù', description: 'Classic Italian dessert with mascarpone and espresso', price: 7.00, category: 'Dolci' },
-    { name: 'Panna Cotta', description: 'Vanilla panna cotta with berry coulis', price: 6.50, category: 'Dolci' },
-    // Bevande
-    { name: 'Acqua Naturale 0.5L', description: 'Still water', price: 2.50, category: 'Bevande' },
-    { name: 'Acqua Frizzante 0.5L', description: 'Sparkling water', price: 2.50, category: 'Bevande' },
-    { name: 'Vino della Casa (calice)', description: 'House wine by the glass', price: 5.00, category: 'Bevande' },
-    { name: 'Caffè Espresso', description: 'Italian espresso', price: 2.00, category: 'Bevande' },
+    // Starters — 3 items
+    { name: 'Garlic Bread',       description: 'Toasted ciabatta with garlic butter and parsley',      price: 5.50,  category: 'Starters'  },
+    { name: 'Soup of the Day',    description: 'Freshly made soup served with crusty bread',           price: 6.00,  category: 'Starters'  },
+    { name: 'Prawn Cocktail',     description: 'King prawns with Marie Rose sauce and salad leaves',   price: 8.50,  category: 'Starters'  },
+
+    // Pasta — 3 items
+    { name: 'Spaghetti Bolognese',   description: 'Spaghetti with slow-cooked beef and tomato sauce', price: 13.50, category: 'Pasta'     },
+    { name: 'Penne Arrabbiata',      description: 'Penne in a spicy tomato and chilli sauce',         price: 12.00, category: 'Pasta'     },
+    { name: 'Tagliatelle Carbonara', description: 'Tagliatelle with bacon, egg, cream and parmesan',  price: 13.00, category: 'Pasta'     },
+
+    // Mains — 4 items
+    { name: 'Grilled Chicken',    description: 'Free-range chicken breast with roasted vegetables',    price: 16.00, category: 'Mains'     },
+    { name: 'Beef Steak',         description: '8oz sirloin steak cooked to your liking',              price: 28.00, category: 'Mains'     },
+    { name: 'Pan-fried Salmon',   description: 'Atlantic salmon fillet with lemon butter sauce',       price: 19.00, category: 'Mains'     },
+    { name: 'Lamb Chops',         description: 'Grilled lamb chops with mint sauce and potatoes',      price: 24.00, category: 'Mains'     },
+
+    // Desserts — 2 items
+    { name: 'Chocolate Cake',     description: 'Warm dark chocolate cake with vanilla ice cream',      price: 7.00,  category: 'Desserts'  },
+    { name: 'Vanilla Ice Cream',  description: 'Three scoops of vanilla ice cream with wafers',        price: 5.50,  category: 'Desserts'  },
+
+    // Drinks — 3 items
+    { name: 'Still Water',        description: '500ml still mineral water',                            price: 2.50,  category: 'Drinks'    },
+    { name: 'Coffee',             description: 'Freshly brewed espresso or Americano',                 price: 3.00,  category: 'Drinks'    },
+    { name: 'House Wine',         description: 'Glass of red or white house wine',                     price: 5.50,  category: 'Drinks'    },
   ];
 
-  for (const item of menuItems) {
-    const existing = await prisma.menuItem.findFirst({ where: { name: item.name } });
-    if (!existing) {
-      await prisma.menuItem.create({ data: item });
-    }
-  }
+  // Insert every menu item
+  await prisma.menuItem.createMany({ data: menuItems });
 
-  console.log('Seeding complete!');
-  console.log('');
-  console.log('Test accounts (password: password123):');
-  console.log('  Waiter: waiter1, waiter2');
-  console.log('  Cook:   cook1, cook2');
+  console.log('Done! Database seeded successfully.');
+  console.log('Test accounts (password: password123)');
+  console.log('  Waiters: waiter1 (James Wilson), waiter2 (Emma Thompson)');
+  console.log('  Cooks:   cook1   (Oliver Smith),  cook2   (Sarah Johnson)');
 }
 
 main()

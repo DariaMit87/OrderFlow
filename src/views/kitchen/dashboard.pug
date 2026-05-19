@@ -1,42 +1,39 @@
 extends ../layout
 
 block content
-  .page-header
-    h2 Kitchen Dashboard
-    button.btn.btn-secondary#refresh-btn(onclick="location.reload()") Refresh
+  .page-wide
+    .page-title Kitchen Orders
 
-  if orders.length === 0
-    .empty-state
-      .empty-icon 👨‍🍳
-      p No active orders. Waiting for new orders...
-  else
-    .kitchen-grid
-      each order in orders
-        .kitchen-order-card
-          .kitchen-order-header
-            .order-id-table
-              span.kitchen-order-id Order ##{order.id}
-              span.kitchen-table-badge Table #{order.table ? order.table.tableNumber : 'N/A'}
-            .order-time= new Date(order.createdAt).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})
-            .order-waiter Waiter: #{order.waiter ? order.waiter.name : 'Unknown'}
-          .kitchen-items
-            each item in order.orderItems
-              .kitchen-item(class=`item-status-${item.status.toLowerCase()}`)
-                .kitchen-item-info
-                  span.kitchen-item-qty= item.quantity + 'x'
-                  span.kitchen-item-name= item.menuItem.name
-                  if item.notes
-                    .kitchen-item-notes Notes: #{item.notes}
-                .kitchen-item-status
-                  span.status-badge(class=`status-${item.status.toLowerCase()}`)= item.status
-                  .kitchen-actions
+    if orders.length === 0
+      .empty-state Waiting for new orders...
+    else
+      .kitchen-grid
+        each order in orders
+          .kitchen-card
+            .kitchen-card-header
+              div
+                .kitchen-table Table #{order.table ? order.table.tableNumber : 'N/A'}
+                .kitchen-order-meta Order ##{order.id} &bull; #{new Date(order.createdAt).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}
+              span.item-count-badge #{order.orderItems.length} #{order.orderItems.length === 1 ? 'item' : 'items'}
+            .kitchen-items
+              each item in order.orderItems
+                .kitchen-item-row
+                  .kitchen-item-left
+                    span.item-qty= item.quantity + 'x'
+                    div
+                      .item-name= item.menuItem.name
+                      if item.notes
+                        .kitchen-item-note= item.notes
+                  .kitchen-item-right
+                    span.badge(class=item.status === 'NEW' ? 'badge-new' : item.status === 'COOKING' ? 'badge-preparing' : 'badge-ready')
+                      = item.status === 'NEW' ? 'pending' : item.status.toLowerCase()
                     if item.status === 'NEW'
-                      form(action=`/kitchen/item/${item.id}/status` method="POST" style="display:inline")
+                      form(action=`/kitchen/item/${item.id}/status` method="POST")
                         input(type="hidden" name="status" value="COOKING")
-                        button.btn.btn-sm.btn-cooking(type="submit") Start Cooking
+                        button.btn.btn-sm.btn-dark(type="submit") Start Preparing
                     if item.status === 'COOKING'
-                      form(action=`/kitchen/item/${item.id}/status` method="POST" style="display:inline")
+                      form(action=`/kitchen/item/${item.id}/status` method="POST")
                         input(type="hidden" name="status" value="READY")
-                        button.btn.btn-sm.btn-ready(type="submit") Mark Ready
+                        button.btn.btn-sm.btn-dark(type="submit") Mark Ready
 
   script(src="/js/kitchen.js")

@@ -8,7 +8,6 @@ html(lang="en")
   body
     if user
       include partials/navbar
-    .container
-      include partials/messages
-      block content
+    include partials/messages
+    block content
     script(src="/js/app.js")

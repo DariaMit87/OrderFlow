@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 
+// Fetches all active orders (PENDING or IN_PROGRESS) and passes them to the kitchen view
 async function getDashboard(req, res, next) {
   try {
     const orders = await prisma.order.findMany({
@@ -16,7 +17,7 @@ async function getDashboard(req, res, next) {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Only show orders that still have active items
+    // Only show orders that still have undelivered items
     const activeOrders = orders.filter(o => o.orderItems.length > 0);
 
     res.render('kitchen/dashboard', { title: 'Kitchen Dashboard', orders: activeOrders, user: req.user });
@@ -25,11 +26,13 @@ async function getDashboard(req, res, next) {
   }
 }
 
+// Updates the status of an order item (NEW → COOKING → READY) and recalculates the parent order status
 async function updateItemStatus(req, res, next) {
   try {
     const itemId = parseInt(req.params.itemId);
     const { status } = req.body;
 
+    // Only allow moving status to COOKING or READY - not backwards
     const allowed = ['COOKING', 'READY'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ error: 'Invalid status.' });
@@ -37,16 +40,13 @@ async function updateItemStatus(req, res, next) {
 
     const item = await prisma.orderItem.update({
       where: { id: itemId },
-      data: {
-        status,
-        cookId: req.user.id,
-      },
+      data: { status, cookId: req.user.id },
       include: { order: true },
     });
 
-    // Update parent order status based on items
-    const items = await prisma.orderItem.findMany({ where: { orderId: item.orderId } });
-    const statuses = items.map(i => i.status);
+    // Change the parent order's status based on all its items
+    const allItems = await prisma.orderItem.findMany({ where: { orderId: item.orderId } });
+    const statuses = allItems.map(i => i.status);
 
     let orderStatus = 'PENDING';
     if (statuses.every(s => s === 'DELIVERED')) {
@@ -57,10 +57,6 @@ async function updateItemStatus(req, res, next) {
 
     await prisma.order.update({ where: { id: item.orderId }, data: { status: orderStatus } });
 
-    // Respond with JSON for AJAX or redirect for standard form
-    if (req.accepts('json') && req.xhr) {
-      return res.json({ success: true, status });
-    }
     res.redirect('/kitchen');
   } catch (err) {
     next(err);

@@ -1,26 +1,24 @@
 extends ../layout
 
 block content
-  .page-header
-    h2 New Order — Table #{table.tableNumber}
-    a.btn.btn-secondary(href="/waiter") Back to Tables
+  .page-wide
+    .page-title Create New Order — Table #{table.tableNumber}
 
-  form#order-form(action=`/waiter/table/${table.id}/order` method="POST")
-    .order-layout
-      .menu-section
-        h3 Menu
-        each items, category in grouped
-          .menu-category
-            h4.category-title= category
-            .menu-items-grid
+    form#order-form(action=`/waiter/table/${table.id}/order` method="POST")
+      .order-layout
+        .menu-section
+          each items, category in grouped
+            .category-block
+              .category-name= category
               each item in items
-                .menu-item-card
-                  .item-info
-                    .item-name= item.name
-                    .item-description= item.description || ''
-                    .item-price €#{item.price}
-                  .item-controls
-                    .qty-control
+                .menu-item-row
+                  .menu-item-info
+                    .menu-item-name= item.name
+                    if item.description
+                      .menu-item-desc= item.description
+                    .menu-item-price €#{item.price}
+                  .menu-item-controls
+                    .qty-row
                       button.qty-btn(type="button" data-action="decrease" data-id=item.id) −
                       input.qty-input(
                         type="number"
@@ -32,18 +30,17 @@ block content
                         readonly
                       )
                       button.qty-btn(type="button" data-action="increase" data-id=item.id) +
-                    input.notes-input(
+                    input.notes-field(
                       type="text"
                       name=`items[${item.id}][notes]`
-                      placeholder="Notes (optional)"
+                      placeholder="Notes..."
                       id=`notes-${item.id}`
                     )
 
-      .order-summary
-        h3 Order Summary
-        #summary-list
-          p.empty-msg No items added yet.
-        .summary-footer
-          button.btn.btn-primary.btn-full(type="submit") Send to Kitchen
+        .order-summary
+          .summary-title Order Summary
+          #summary-list
+            p.summary-empty No items added yet.
+          button.btn.btn-dark.btn-full(type="submit") Submit Order
 
   script(src="/js/waiter.js")

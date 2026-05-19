@@ -5,20 +5,18 @@ html(lang="en")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title OrderFlow — Login
     link(rel="stylesheet" href="/css/styles.css")
-  body.login-page
-    .login-wrapper
+  body
+    .login-page
       .login-card
-        .login-header
-          h1.login-logo 🍝 OrderFlow
-          p.login-subtitle Tagliatelle Restaurant
         if error && error.length
           each msg in error
             .alert.alert-error= msg
-        form.login-form(action="/login" method="POST")
+        h1.login-title OrderFlow Login
+        form(action="/login" method="POST")
           .form-group
             label(for="username") Username
             input#username(type="text" name="username" placeholder="Enter your username" required autofocus)
           .form-group
             label(for="password") Password
             input#password(type="password" name="password" placeholder="Enter your password" required)
-          button.btn.btn-primary.btn-full(type="submit") Sign In
+          button.btn.btn-dark.btn-full(type="submit") Login
