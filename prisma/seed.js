@@ -4,11 +4,11 @@ const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
-// Clears and repopulates the database with users, tables, and menu items
+// populates the database with users, tables, and menu items
 async function main() {
   console.log('Clearing existing data...');
 
-  // Delete in dependency order to avoid foreign key violations
+
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.menuItem.deleteMany();
@@ -21,17 +21,17 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Create two waiter accounts with British names
+  // Create two waiter accounts
   await prisma.user.create({ data: { username: 'waiter1', name: 'James Wilson',   password: hashedPassword, role: 'WAITER' } });
   await prisma.user.create({ data: { username: 'waiter2', name: 'Emma Thompson',  password: hashedPassword, role: 'WAITER' } });
 
-  // Create two cook accounts with British names
+  // Create two cook accounts
   await prisma.user.create({ data: { username: 'cook1',   name: 'Oliver Smith',   password: hashedPassword, role: 'COOK'   } });
   await prisma.user.create({ data: { username: 'cook2',   name: 'Sarah Johnson',  password: hashedPassword, role: 'COOK'   } });
 
   console.log('Seeding tables...');
 
-  // Create 10 restaurant tables only if they do not already exist
+  // Create 10 restaurant tables
   for (let i = 1; i <= 10; i++) {
     await prisma.restaurantTable.upsert({
       where:  { tableNumber: i },
@@ -42,29 +42,24 @@ async function main() {
 
   console.log('Seeding menu...');
 
-  // Create the full menu with English names across five categories
+  // Create the menu
   const menuItems = [
-    // Starters — 3 items
     { name: 'Garlic Bread',       description: 'Toasted ciabatta with garlic butter and parsley',      price: 5.50,  category: 'Starters'  },
     { name: 'Soup of the Day',    description: 'Freshly made soup served with crusty bread',           price: 6.00,  category: 'Starters'  },
     { name: 'Prawn Cocktail',     description: 'King prawns with Marie Rose sauce and salad leaves',   price: 8.50,  category: 'Starters'  },
 
-    // Pasta — 3 items
     { name: 'Spaghetti Bolognese',   description: 'Spaghetti with slow-cooked beef and tomato sauce', price: 13.50, category: 'Pasta'     },
     { name: 'Penne Arrabbiata',      description: 'Penne in a spicy tomato and chilli sauce',         price: 12.00, category: 'Pasta'     },
     { name: 'Tagliatelle Carbonara', description: 'Tagliatelle with bacon, egg, cream and parmesan',  price: 13.00, category: 'Pasta'     },
 
-    // Mains — 4 items
     { name: 'Grilled Chicken',    description: 'Free-range chicken breast with roasted vegetables',    price: 16.00, category: 'Mains'     },
     { name: 'Beef Steak',         description: '8oz sirloin steak cooked to your liking',              price: 28.00, category: 'Mains'     },
     { name: 'Pan-fried Salmon',   description: 'Atlantic salmon fillet with lemon butter sauce',       price: 19.00, category: 'Mains'     },
     { name: 'Lamb Chops',         description: 'Grilled lamb chops with mint sauce and potatoes',      price: 24.00, category: 'Mains'     },
 
-    // Desserts — 2 items
     { name: 'Chocolate Cake',     description: 'Warm dark chocolate cake with vanilla ice cream',      price: 7.00,  category: 'Desserts'  },
     { name: 'Vanilla Ice Cream',  description: 'Three scoops of vanilla ice cream with wafers',        price: 5.50,  category: 'Desserts'  },
 
-    // Drinks — 3 items
     { name: 'Still Water',        description: '500ml still mineral water',                            price: 2.50,  category: 'Drinks'    },
     { name: 'Coffee',             description: 'Freshly brewed espresso or Americano',                 price: 3.00,  category: 'Drinks'    },
     { name: 'House Wine',         description: 'Glass of red or white house wine',                     price: 5.50,  category: 'Drinks'    },

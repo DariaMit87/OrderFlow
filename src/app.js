@@ -12,18 +12,15 @@ const kitchenRoutes   = require('./routes/kitchenRoutes');
 
 const app = express();
 
-// Use Pug as the HTML templating engine, with views stored in src/views
+// Use Pug, views stored in src/views
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
-
-// Serve static CSS, JS, and image files from the public folder
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Parse URL-encoded form submissions (extended enables nested objects like items[1][qty])
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Store user sessions server-side; the session ID is kept in a browser cookie
+// Store user sessions server-side
 app.use(session({
   secret: process.env.SESSION_SECRET || 'fallback-secret',
   resave: false,
@@ -35,7 +32,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Enable one-time flash messages that survive a single redirect
+// Enable one-time flash messages
 app.use(flash());
 
 // Expose the current user and any flash messages to every Pug template
