@@ -16,7 +16,6 @@ enum OrderStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
-  CANCELLED
 }
 
 enum ItemStatus {
@@ -33,14 +32,12 @@ model User {
   password String
   role     UserRole
 
-  ordersCreated Order[]     @relation("OrdersCreated")
-  itemsCooked   OrderItem[] @relation("ItemsCooked")
+  ordersCreated Order[] @relation("OrdersCreated")
 }
 
 model RestaurantTable {
   id          Int     @id @default(autoincrement())
   tableNumber Int     @unique
-  seats       Int     @default(4)
   isOccupied  Boolean @default(false)
 
   orders Order[]
@@ -52,20 +49,18 @@ model MenuItem {
   description String?
   price       Decimal @db.Decimal(8, 2)
   category    String
-  available   Boolean @default(true)
 
   orderItems OrderItem[]
 }
 
 model Order {
-  id        Int         @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   tableId   Int?
   table     RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   waiterId  Int?
-  waiter    User?       @relation("OrdersCreated", fields: [waiterId], references: [id], onDelete: SetNull)
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  waiter    User?            @relation("OrdersCreated", fields: [waiterId], references: [id], onDelete: SetNull)
+  status    OrderStatus      @default(PENDING)
+  createdAt DateTime         @default(now())
 
   orderItems OrderItem[]
 }
@@ -79,10 +74,7 @@ model OrderItem {
   quantity   Int        @default(1)
   status     ItemStatus @default(NEW)
   notes      String?
-  cookId     Int?
-  cook       User?      @relation("ItemsCooked", fields: [cookId], references: [id], onDelete: SetNull)
   createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
 
   @@index([orderId])
   @@index([status])

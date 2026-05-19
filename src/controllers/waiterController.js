@@ -26,15 +26,16 @@ async function getCreateOrder(req, res, next) {
     if (!table) return res.status(404).render('error', { title: 'Not Found', message: 'Table not found.' });
 
     const menuItems = await prisma.menuItem.findMany({
-      where: { available: true },
+      where: {},
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
-    // Group menu items by their category for display
+    // Group menu items by category
+    const categoryOrder = ['Drinks', 'Starters', 'Pasta', 'Mains', 'Desserts'];
     const grouped = {};
+    for (const cat of categoryOrder) grouped[cat] = [];
     for (const item of menuItems) {
-      if (!grouped[item.category]) grouped[item.category] = [];
-      grouped[item.category].push(item);
+      if (grouped[item.category]) grouped[item.category].push(item);
     }
 
     res.render('waiter/createOrder', { title: 'Create Order', table, grouped, user: req.user });
@@ -47,21 +48,17 @@ async function getCreateOrder(req, res, next) {
 async function postCreateOrder(req, res, next) {
   try {
     const tableId = parseInt(req.params.tableId);
-    const { items } = req.body;
-
-    // Create the list of order items from submitted form data
     const orderItems = [];
-    if (items) {
-      for (const [menuItemId, data] of Object.entries(items)) {
-        if (!data || typeof data !== 'object') continue;
-        const qty = parseInt(data.quantity);
-        if (qty > 0) {
-          orderItems.push({
-            menuItemId: parseInt(menuItemId),
-            quantity: qty,
-            notes: data.notes || null,
-          });
-        }
+    for (const [key, value] of Object.entries(req.body)) {
+      if (!key.startsWith('qty_')) continue;
+      const menuItemId = parseInt(key.slice(4));
+      const qty = parseInt(value);
+      if (qty > 0) {
+        orderItems.push({
+          menuItemId,
+          quantity: qty,
+          notes: req.body[`notes_${menuItemId}`] || null,
+        });
       }
     }
 
@@ -108,10 +105,10 @@ async function getOrders(req, res, next) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Push completed and cancelled orders to the bottom of the list
+    // Push completed orders to the bottom of the list
     const sorted = [
-      ...orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)),
-      ...orders.filter(o =>  ['COMPLETED', 'CANCELLED'].includes(o.status)),
+      ...orders.filter(o => o.status !== 'COMPLETED'),
+      ...orders.filter(o => o.status === 'COMPLETED'),
     ];
 
     res.render('waiter/orders', { title: 'My Orders', orders: sorted, user: req.user });

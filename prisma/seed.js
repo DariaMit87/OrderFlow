@@ -36,7 +36,7 @@ async function main() {
     await prisma.restaurantTable.upsert({
       where:  { tableNumber: i },
       update: {},
-      create: { tableNumber: i, seats: i <= 4 ? 2 : i <= 7 ? 4 : 6 },
+      create: { tableNumber: i },
     });
   }
 

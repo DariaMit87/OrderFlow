@@ -7,7 +7,6 @@ block content
       each table in tables
         .table-card(class=table.isOccupied ? 'occupied' : '')
           .table-num Table #{table.tableNumber}
-          .table-seats #{table.seats} seats
           span.table-status-label(class=table.isOccupied ? 'status-occupied' : 'status-free')
             = table.isOccupied ? 'Occupied' : 'Free'
           br

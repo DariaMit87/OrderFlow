@@ -22,17 +22,18 @@ block content
                       button.qty-btn(type="button" data-action="decrease" data-id=item.id) −
                       input.qty-input(
                         type="number"
-                        name=`items[${item.id}][quantity]`
+                        name=`qty_${item.id}`
                         value="0"
                         min="0"
                         max="20"
                         id=`qty-${item.id}`
+                        data-price=item.price
                         readonly
                       )
                       button.qty-btn(type="button" data-action="increase" data-id=item.id) +
                     input.notes-field(
                       type="text"
-                      name=`items[${item.id}][notes]`
+                      name=`notes_${item.id}`
                       placeholder="Notes..."
                       id=`notes-${item.id}`
                     )
@@ -41,6 +42,9 @@ block content
           .summary-title Order Summary
           #summary-list
             p.summary-empty No items added yet.
+          .order-total-row#summary-total(style="display:none")
+            span Total
+            span#summary-total-value
           button.btn.btn-dark.btn-full(type="submit") Submit Order
 
   script(src="/js/waiter.js")

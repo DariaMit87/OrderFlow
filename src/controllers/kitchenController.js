@@ -11,7 +11,7 @@ async function getDashboard(req, res, next) {
         orderItems: {
           where: { status: { not: 'DELIVERED' } },
           include: { menuItem: true },
-          orderBy: { createdAt: 'asc' },
+          orderBy: { id: 'asc' },
         },
       },
       orderBy: { createdAt: 'asc' },
@@ -40,7 +40,7 @@ async function updateItemStatus(req, res, next) {
 
     const item = await prisma.orderItem.update({
       where: { id: itemId },
-      data: { status, cookId: req.user.id },
+      data: { status },
       include: { order: true },
     });
 
